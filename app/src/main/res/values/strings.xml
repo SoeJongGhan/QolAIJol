@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" project="cameraaccess">
+
+    <!-- App -->
+    <string name="app_name" description="Launcher label / app name">QolAIJol</string>
+
+    <!-- App chrome -->
+    <string name="scaffold_error_icon_description" description="Content description for the error snackbar icon">Camera Access error</string>
+    <string name="debug_menu_description" description="Content description for the debug menu button">Debug menu</string>
+
+    <!-- Home Screen -->
+    <string name="register_button_title" description="Connect App">Connect my glasses</string>
+    <string name="home_redirect_message" description="Redirect message">You\'ll be redirected to the Meta AI app to confirm your connection.</string>
+    <string name="home_tip_session_title" description="Tip title about connecting the glasses">Connect your glasses</string>
+    <string name="home_tip_session" description="Tip about connecting the glasses">Connect once through the Meta AI app to get started.</string>
+    <string name="home_tip_preview_title" description="Tip title about the Start button">Press Start</string>
+    <string name="home_tip_preview" description="Tip about what Start does">The glasses camera turns on and obstacles ahead are announced.</string>
+    <string name="home_tip_capture_title" description="Tip title about controlling the app from the glasses">Double tap the glasses</string>
+    <string name="home_tip_capture" description="Tip about voice commands from the glasses">Then say what you need, for example: what\'s ahead. Say help to hear all commands.</string>
+    <string name="error_activity_unavailable" description="Error shown when registration is tapped but no activity is available">Can\'t open right now. Try again.</string>
+
+    <!-- Camera Screen -->
+    <string name="camera_access_icon_description" description="Camera Access icon description">Camera Access icon</string>
+    <string name="live_preview" description="Live preview content description">Live preview</string>
+    <string name="waiting_for_active_device" description="Waiting for active device message">Waiting for an active device</string>
+    <string name="status_session" description="Session status chip label">Session</string>
+    <string name="status_stream" description="Stream status chip label">Stream</string>
+    <string name="unregister_button_title" description="Disconnect App">Disconnect</string>
+
+    <!-- Placeholder states -->
+    <string name="placeholder_put_on_glasses" description="Placeholder when no active device">Put on your glasses</string>
+    <string name="placeholder_ready_title" description="Placeholder when ready to start a session">Ready</string>
+    <string name="placeholder_ready_subtitle" description="Placeholder subtitle when ready">Press Start to turn on the glasses camera.</string>
+    <string name="placeholder_session_started_title" description="Placeholder when session is started">Connected</string>
+    <string name="placeholder_session_started_subtitle" description="Placeholder subtitle when session is started">Turning on the camera…</string>
+    <string name="paused_title" description="Badge shown over the frozen preview when the glasses pause the stream">Paused</string>
+    <string name="paused_subtitle" description="Instruction telling the user how to resume a paused stream">Tap your glasses to resume.</string>
+
+    <!-- Capture controls -->
+    <string name="record_label" description="Record button label">Record</string>
+    <string name="record_video" description="Record video content description">Record video</string>
+    <string name="stop_recording" description="Stop recording content description">Stop recording</string>
+    <string name="capture_photo" description="Capture photo content description">Capture photo</string>
+    <string name="mic_on" description="Microphone on content description">Turn off microphone</string>
+    <string name="mic_off" description="Microphone off content description">Turn on microphone</string>
+
+    <!-- Update required -->
+    <string name="update_firmware_button_title" description="Open firmware update">Update firmware</string>
+    <string name="update_required_title" description="Update required warning title">Update required</string>
+    <string name="update_required_subtitle" description="Update required placeholder subtitle">Apply the update to start your camera.</string>
+    <string name="update_required_firmware_message" description="Firmware update required warning">Your glasses need a firmware update before Camera Access can start.</string>
+
+    <!-- Camera permission redirect -->
+    <string name="camera_permission_redirect_title" description="Camera permission redirect title">Allow camera access</string>
+    <string name="camera_permission_redirect_message" description="Camera permission redirect message">To preview your glasses camera, you\'ll be taken to the Meta AI app to grant access, then returned here.</string>
+    <string name="camera_permission_continue" description="Camera permission continue button">Continue</string>
+    <string name="camera_permission_cancel" description="Camera permission cancel button">Cancel</string>
+
+    <!-- Capture Preview -->
+    <string name="captured_photo" description="Captured photo content description">Captured photo</string>
+    <string name="share" description="Share">Share</string>
+    <string name="close_preview" description="Close preview content description">Close</string>
+
+    <!-- Camera errors -->
+    <string name="error_start_session_first" description="Error shown when previewing before a session is started">Start a session before previewing.</string>
+    <string name="error_camera_permission_denied" description="Error shown when camera permission is denied">Camera permission denied</string>
+    <string name="error_photo_capture_failed" description="Error shown when a photo capture fails">Couldn\'t capture photo. Try again.</string>
+    <string name="error_recording_too_short" description="Error shown when a recording stops before any video is captured">Couldn\'t record. Hold a little longer and try again.</string>
+    <string name="error_recording_save_failed" description="Error shown when a recording cannot be finalized">Recording couldn\'t be saved. Try again.</string>
+
+    <!-- Wearables errors -->
+    <string name="error_device_update_required" description="Error shown when a connected device needs a firmware update"><xliff:g id="device_name">%1$s</xliff:g> needs an update to work with this app.</string>
+    <string name="error_permissions_required" description="Error shown when required Android permissions are denied">Allow Bluetooth, Bluetooth connect and internet permissions.</string>
+
+    <!-- Streaming notification -->
+    <string name="notification_channel_name" description="Streaming notification channel name">QolAIJol status</string>
+    <string name="notification_channel_description" description="Streaming notification channel description">Shows that QolAIJol is on, with Speak, Repeat and Stop buttons</string>
+    <string name="notification_title" description="Streaming notification title">QolAIJol is on</string>
+    <string name="notification_body" description="Streaming notification body">Alerts are on. Press Speak, or double tap the glasses, to give a command.</string>
+    <string name="notification_action_speak" description="Notification button that starts or ends a voice command">Speak</string>
+    <string name="notification_action_repeat" description="Notification button that repeats the last spoken message">Repeat</string>
+    <string name="notification_action_stop" description="Notification button that turns the glasses camera off">Stop</string>
+
+    <!-- Mock Device Kit Screen -->
+    <string name="mock_device_kit_title" description="MockDeviceKit title">MockDeviceKit</string>
+    <string name="mock_device_name" description="Display name for a paired mock device">Mock glasses</string>
+    <string name="devices_paired_count" description="Number of devices paired"><xliff:g id="count">%1$d</xliff:g> device(s) paired</string>
+    <string name="mock_device_kit_description" description="MockDeviceKit description">This screen simulates devices and mocks their capabilities and states.</string>
+    <string name="enable_mock_device_kit" description="Enable MockDeviceKit button">Enable MockDeviceKit</string>
+    <string name="disable_mock_device_kit" description="Disable MockDeviceKit button">Disable MockDeviceKit</string>
+    <string name="pair_rayban_meta" description="Pair Ray-Ban Meta">Pair Ray-Ban Meta</string>
+    <string name="unpair" description="Unpair">Unpair</string>
+    <string name="select_image" description="Select image">Select image</string>
+    <string name="has_captured_image" description="Has captured image">Has captured image</string>
+    <string name="front_camera" description="Front camera">Front camera</string>
+    <string name="back_camera" description="Back camera">Back camera</string>
+    <string name="camera_source_label" description="Camera source dropdown label">Camera source: <xliff:g id="source">%1$s</xliff:g></string>
+    <string name="camera_source_none" description="Camera source none">None</string>
+    <string name="camera_source_video_file" description="Camera source video file">Video file</string>
+    <string name="power" description="Power toggle label">Power</string>
+    <string name="donned" description="Donned toggle label">Donned</string>
+    <string name="unfolded" description="Unfolded toggle label">Unfolded</string>
+    <string name="captouch_section_title" description="Section label for the capacitive touch gesture buttons">Capacitive touch events</string>
+    <string name="captouch_tap" description="Button that simulates a single tap gesture on the glasses">Tap</string>
+    <string name="captouch_tap_and_hold" description="Button that simulates a tap-and-hold gesture on the glasses">Tap and hold</string>
+    <string name="inputs_section_title" description="Section label for gestures the app receives through the Inputs capability">Gestures for the app (Inputs)</string>
+    <string name="inputs_double_tap" description="Button that simulates a double tap on the glasses touchpad">Double tap</string>
+    <string name="inputs_swipe" description="Button that simulates a swipe on the glasses touchpad">Swipe</string>
+    <string name="inputs_capture_section_title" description="Section label for the simulated camera (capture) button">Camera button</string>
+    <string name="inputs_capture_press" description="Button that simulates a short press of the camera button">Press</string>
+    <string name="inputs_capture_double_press" description="Button that simulates a double press of the camera button">Press twice</string>
+    <string name="inputs_capture_hold" description="Button that simulates holding the camera button">Hold</string>
+
+    <!-- Camera Permission Alert (MockDeviceKit camera source) -->
+    <string name="camera_permission_alert_title" description="Camera permission alert title">Camera access required</string>
+    <string name="camera_permission_alert_message" description="Camera permission alert message">Camera access was denied. Enable it in Settings to use the camera source.</string>
+    <string name="camera_permission_open_settings" description="Camera permission open settings button">Open Settings</string>
+
+    <!-- QolAIJol object detection and alerts (spoken language: English) -->
+    <string name="ai_status_loading" description="AI status while the detection model loads">loading model</string>
+    <string name="ai_status_ready" description="AI status when the detection model is ready">ready</string>
+    <string name="ai_status_error" description="AI status when the detection model failed">error</string>
+    <string name="ai_status_label" description="AI status line; %1$s is the status">AI: %1$s</string>
+    <string name="ai_status_with_timing" description="AI status line with inference time; %1$s status, %2$d milliseconds">AI: %1$s · %2$d ms</string>
+    <string name="no_objects_detected" description="Shown when the latest frame has no detections">No objects detected</string>
+    <string name="detection_line" description="One detection; %1$s class name, %2$d confidence percent, %3$s position">%1$s %2$d%% · %3$s</string>
+    <string name="position_left" description="Object is in the left part of the image">left</string>
+    <string name="position_center" description="Object is in the center of the image">ahead</string>
+    <string name="position_right" description="Object is in the right part of the image">right</string>
+    <string name="voice_status_label" description="Voice (text-to-speech) status line; %1$s is the status">Voice: %1$s</string>
+    <string name="voice_status_starting" description="Text-to-speech is starting">starting</string>
+    <string name="voice_status_ready" description="Text-to-speech is ready">ready</string>
+    <string name="voice_status_no_offline_voice" description="No offline English text-to-speech voice is installed">no offline English voice</string>
+    <string name="voice_status_unavailable" description="Text-to-speech is not available">unavailable</string>
+    <string name="latest_alert" description="Last spoken alert; %1$s is the alert text">Alert: “%1$s”</string>
+
+    <!-- QolAIJol English voice / speech model download prompt -->
+    <string name="language_prompt_title" description="Title of the prompt that offers to download English speech data">Download English?</string>
+    <string name="language_prompt_message" description="Prompt body before the list of missing downloads">QolAIJol speaks and listens in English. To work without internet, it needs:</string>
+    <string name="language_prompt_voice" description="Missing download: the offline English text-to-speech voice">• the English voice for spoken alerts</string>
+    <string name="language_prompt_speech" description="Missing download: the offline English speech recognition model">• English speech recognition for voice commands</string>
+    <string name="language_prompt_note" description="Prompt note about the download">Downloading needs internet once and continues in the background.</string>
+    <string name="language_prompt_download" description="Button that starts the download">Download</string>
+    <string name="language_prompt_later" description="Button that closes the prompt without downloading">Later</string>
+
+    <!-- QolAIJol voice commands -->
+    <string name="voice_button_idle" description="Big push-to-talk button, idle">Speak</string>
+    <string name="voice_button_listening" description="Push-to-talk button while recording">Listening… press again</string>
+    <string name="voice_button_recognizing" description="Push-to-talk button while speech is being recognized">Recognizing…</string>
+    <string name="voice_button_understanding" description="Push-to-talk button while the command is being interpreted">Thinking…</string>
+    <string name="voice_button_searching" description="Push-to-talk button while a place or route is being looked up">Searching…</string>
+    <string name="voice_button_describing" description="Push-to-talk button while the scene is being described">Looking…</string>
+    <string name="voice_heard" description="What the user said; %1$s is the recognized text">You: “%1$s”</string>
+    <string name="voice_heard_offline" description="What the user said, recognized on the device without internet; %1$s is the text">You (offline): “%1$s”</string>
+    <string name="voice_answer" description="What the assistant answered; %1$s is the answer">Answer: “%1$s”</string>
+    <string name="nav_status" description="Active route; %1$s destination, %2$s remaining distance">Route: %1$s · %2$s left</string>
+    <string name="nav_instruction" description="Last navigation instruction; %1$s is the text">Navigator: %1$s</string>
+    <string name="nav_stop_button" description="Button that ends the active route">End route</string>
+    <string name="assistance_off" description="Shown when warnings were turned off by voice">Alerts are off (say “start”)</string>
+
+    <!-- QolAIJol controls: the phone buttons do the same as the glasses gestures -->
+    <string name="control_start" description="Big button that connects to the glasses and turns the camera on">Start</string>
+    <string name="control_stop" description="Big button that turns the glasses camera off">Stop</string>
+    <string name="control_whats_around" description="Button: quick spoken summary of what the camera sees">What\'s around</string>
+    <string name="control_repeat" description="Button: says the last spoken message again">Repeat</string>
+    <string name="control_describe" description="Button: detailed spoken description of the scene (needs internet)">Describe</string>
+    <string name="control_alerts_on" description="Alerts toggle while obstacle alerts are on">Alerts: on</string>
+    <string name="control_alerts_off" description="Alerts toggle while obstacle alerts are off">Alerts: off</string>
+    <string name="status_no_glasses" description="Status when no glasses are available">Glasses not found. Put them on and open the hinges.</string>
+    <string name="status_off" description="Status when the camera is off and glasses are ready">Camera off. Press Start.</string>
+    <string name="status_starting" description="Status while connecting and turning the camera on">Starting…</string>
+    <string name="status_on" description="Status when the camera is on and alerts are on">Camera on. Alerts on.</string>
+    <string name="status_on_alerts_off" description="Status when the camera is on but alerts are off">Camera on. Alerts off.</string>
+    <string name="status_paused" description="Status when the glasses paused the camera">Paused. Tap the glasses once to resume.</string>
+    <string name="gestures_connecting" description="Status of the glasses gestures while they connect">Glasses gestures: connecting…</string>
+    <string name="gestures_on" description="Status and short guide when the glasses gestures work">Glasses: double tap to speak, swipe for what\'s around</string>
+    <string name="gestures_unavailable" description="Status when the glasses gestures can't be used">Glasses gestures unavailable. Use the phone.</string>
+
+    <!-- QolAIJol camera choice: the glasses or a USB webcam on the USB-C port -->
+    <string name="control_source_glasses" description="Camera choice button while the glasses camera is chosen">Camera: glasses</string>
+    <string name="control_source_usb" description="Camera choice button while the USB webcam is chosen">Camera: USB webcam</string>
+    <string name="status_usb_off" description="Status when the USB webcam is plugged in and off">USB camera off. Press Start.</string>
+    <string name="status_usb_not_found" description="Status when the USB webcam is chosen but not plugged in">USB camera not found. Connect it to the USB-C port.</string>
+    <string name="placeholder_usb_title" description="Placeholder title when the USB webcam is the chosen camera">USB webcam</string>
+</resources>

@@ -1,0 +1,11 @@
+{
+  "0": "pedestrian",
+  "1": "rider",
+  "2": "vehicle",
+  "3": "animal",
+  "4": "obstacle",
+  "5": "pole",
+  "6": "stairs",
+  "7": "crosswalk",
+  "8": "traffic light"
+}
