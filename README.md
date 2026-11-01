@@ -33,7 +33,7 @@ prototype, **not a certified mobility aid**: always keep using a white cane or a
 4. One warning at a time, at least 2.5 s apart (CRITICAL may interrupt); the same object type at the
    same place is not repeated for 10 s.
 5. **Stairs, traffic lights and crosswalks are never spoken.** In our evaluation the detector was too
-   weak on them (stairs AP50 0.13, traffic light 0.05), and a false "crosswalk ahead" could lead
+   weak on them (YOLO26n AP50: stairs 0.08, traffic light 0.05), and a false "crosswalk ahead" could lead
    someone onto the road. The app never says that it is safe to cross.
 
 ## Architecture
