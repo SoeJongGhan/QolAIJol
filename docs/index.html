@@ -1,0 +1,652 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>QolAIJol Web Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="QolAIJol obstacle warnings in the browser: the fine-tuned YOLO26n model and the warning rules of the Android app.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
+<style>
+/* Layout: a street-level viewer (camera frame split into LEFT / AHEAD / RIGHT) beside a control
+   column; stacks to one column on phones. Single dark "asphalt" look with tactile-paving yellow. */
+:root {
+  --asphalt: #16181b;
+  --slab: #202429;
+  --kerb: #343a41;
+  --chalk: #eeece6;
+  --dust: #a2a7ad;
+  --tactile: #f5c518;
+  --tactile-ink: #1b1600;
+  --critical: #ff5a36;
+  --high: #ff9f1c;
+  --medium: #e9d16a;
+  --low: #8d949b;
+  --font-ui: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", Roboto, Arial, sans-serif;
+  --font-data: "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.75rem;
+  --step-3: 2.5rem;
+  --radius: 10px;
+  color-scheme: dark;
+}
+html { background: var(--asphalt); }
+body {
+  background: var(--asphalt);
+  color: var(--chalk);
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 20px; }
+a { color: var(--tactile); }
+a:focus-visible, button:focus-visible, label:focus-within { outline: 3px solid var(--tactile); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+.brand { display: grid; gap: 4px; min-width: 0; }
+.brand h1 { font-size: var(--step-3); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.brand h1 span { color: var(--tactile); }
+.brand p { margin: 0; color: var(--dust); max-width: 62ch; }
+.eyebrow { font-family: var(--font-data); font-size: var(--step--1); letter-spacing: 0.12em; text-transform: uppercase; color: var(--tactile); }
+.status { font-family: var(--font-data); font-size: var(--step--1); color: var(--dust); display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--low); flex: none; }
+.dot.ready { background: var(--tactile); }
+.dot.busy { background: var(--high); animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.35; } }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* Viewer */
+.viewer { display: grid; gap: 12px; min-width: 0; }
+.stage { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+.stage video { display: none; }
+.progress { position: absolute; inset: auto 0 0 0; height: 4px; background: rgba(255,255,255,0.08); }
+.progress > i { display: block; height: 100%; width: 0; background: var(--tactile); transition: width 0.2s; }
+.zones { display: grid; grid-template-columns: 33fr 33fr 34fr; font-family: var(--font-data); font-size: var(--step--1); letter-spacing: 0.12em; color: var(--dust); text-align: center; }
+
+.alert {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: center;
+  background: var(--tactile); color: var(--tactile-ink); border-radius: var(--radius); padding: 14px 18px;
+}
+.alert.quiet { background: var(--slab); color: var(--chalk); }
+.alert .say { font-size: var(--step-2); font-weight: 800; line-height: 1.15; min-width: 0; }
+.alert .why { grid-column: 2; font-size: var(--step--1); opacity: 0.85; }
+.alert svg { width: 34px; height: 34px; grid-row: span 2; }
+
+/* Panel */
+.panel { display: grid; gap: 16px; min-width: 0; }
+.block { background: var(--slab); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.block h2 { font-size: var(--step-0); font-weight: 800; }
+.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; background: var(--asphalt); padding: 4px; border-radius: 8px; }
+.tabs button { font: inherit; font-weight: 600; color: var(--dust); background: transparent; border: 0; border-radius: 6px; padding: 10px 6px; cursor: pointer; min-height: 44px; }
+.tabs button[aria-selected="true"] { background: var(--kerb); color: var(--chalk); }
+.thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.thumbs button { padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: none; cursor: pointer; aspect-ratio: 16 / 9; max-width: 100%; }
+.thumbs button[aria-pressed="true"] { border-color: var(--tactile); }
+.thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hint { color: var(--dust); font-size: var(--step--1); margin: 0; }
+.btn {
+  font: inherit; font-weight: 700; min-height: 48px; padding: 10px 16px; border-radius: 8px; cursor: pointer;
+  border: 2px solid var(--kerb); background: var(--asphalt); color: var(--chalk); display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn.primary { background: var(--tactile); color: var(--tactile-ink); border-color: var(--tactile); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.row .btn { flex: 1 1 140px; }
+.file { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--tactile); }
+.note { border-left: 3px solid var(--high); padding: 6px 10px; color: var(--chalk); font-size: var(--step--1); background: rgba(255,159,28,0.08); border-radius: 0 6px 6px 0; }
+
+/* Decision list */
+.decisions { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.decisions li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 8px 10px; border-radius: 8px; background: var(--asphalt); }
+.decisions li.spoken { outline: 2px solid var(--tactile); }
+.decisions .obj { font-weight: 700; }
+.decisions .meta { font-family: var(--font-data); font-size: var(--step--1); color: var(--dust); font-variant-numeric: tabular-nums; text-align: right; }
+.decisions .reason { grid-column: 1 / -1; font-size: var(--step--1); color: var(--dust); }
+.chip { font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.08em; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; color: var(--asphalt); }
+.chip.CRITICAL { background: var(--critical); } .chip.HIGH { background: var(--high); } .chip.MEDIUM { background: var(--medium); } .chip.LOW { background: var(--low); }
+.empty { color: var(--dust); font-size: var(--step--1); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--asphalt); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.stat b { display: block; font-family: var(--font-data); font-size: var(--step-1); font-variant-numeric: tabular-nums; }
+.stat span { font-size: var(--step--1); color: var(--dust); }
+
+/* About */
+.about { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .about { grid-template-columns: minmax(0, 1fr); } }
+.about h3 { font-size: var(--step-0); margin-bottom: 6px; }
+.about p, .about li { color: var(--dust); font-size: var(--step--1); margin: 0; }
+.about ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.rules { font-family: var(--font-data); font-size: var(--step--1); color: var(--chalk); }
+footer { color: var(--dust); font-size: var(--step--1); display: grid; gap: 6px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .dot.busy { animation: none; } .progress > i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Web prototype · smart-glasses obstacle warnings</span>
+      <h1>Qol<span>AI</span>Jol</h1>
+      <p>The obstacle detector and warning rules from the QolAIJol Android app, running in your browser. Pick a street scene, take a photo, or turn on the camera, and hear what a blind user would hear.</p>
+    </div>
+    <div class="status" role="status"><span class="dot" id="dot"></span><span id="statusText">Loading the detector…</span></div>
+  </header>
+
+  <div class="layout">
+    <section class="viewer" aria-label="Camera view">
+      <div class="stage" id="stage">
+        <canvas id="canvas" width="960" height="540" aria-label="Camera frame with detected objects"></canvas>
+        <video id="video" playsinline muted></video>
+        <div class="progress" id="progress"><i id="bar"></i></div>
+      </div>
+      <div class="zones" aria-hidden="true"><span>LEFT</span><span>AHEAD</span><span>RIGHT</span></div>
+      <div class="alert quiet" id="alert" aria-live="assertive">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <div class="say" id="say">Waiting for the first frame</div>
+        <div class="why" id="why">The spoken warning appears here.</div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="block">
+        <h2>Camera input</h2>
+        <div class="tabs" role="tablist" aria-label="Camera input">
+          <button role="tab" id="tab-samples" aria-selected="true" aria-controls="pane-samples">Street scenes</button>
+          <button role="tab" id="tab-photo" aria-selected="false" aria-controls="pane-photo">Your photo</button>
+          <button role="tab" id="tab-live" aria-selected="false" aria-controls="pane-live">Live camera</button>
+        </div>
+        <div id="pane-samples" role="tabpanel" aria-labelledby="tab-samples">
+          <div class="thumbs" id="thumbs"></div>
+          <p class="hint" style="margin-top:8px">Head- and chest-camera frames from the SANPO test set (not used in training).</p>
+        </div>
+        <div id="pane-photo" role="tabpanel" aria-labelledby="tab-photo" hidden>
+          <label class="btn primary" for="file" style="width:100%">Take or choose a photo</label>
+          <input class="file" type="file" id="file" accept="image/*">
+          <p class="hint" style="margin-top:8px">On a phone this opens the camera. Hold it at chest height and face the way you walk. The photo stays on your device.</p>
+        </div>
+        <div id="pane-live" role="tabpanel" aria-labelledby="tab-live" hidden>
+          <div class="row">
+            <button class="btn primary" id="liveStart" type="button">Start camera</button>
+            <button class="btn" id="liveStop" type="button" disabled>Stop</button>
+          </div>
+          <p class="hint" id="liveHint" style="margin-top:8px">Runs a detection every 500 ms, like the app. Warnings are spoken while the camera is on.</p>
+          <p class="note" id="liveBlocked" hidden>This page cannot use the camera here. Use “Your photo” instead, or open the hosted version of the prototype.</p>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="toggle"><label for="voice"><b>Speak warnings</b><br><span class="hint">English voice, like the app’s offline TTS</span></label><input type="checkbox" id="voice" checked></div>
+        <div class="row">
+          <button class="btn" id="around" type="button" disabled>What’s around me?</button>
+          <button class="btn" id="repeat" type="button" disabled>Repeat warning</button>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2>What the app decided</h2>
+        <ul class="decisions" id="decisions"><li class="empty">Detections and the reason each one was spoken or kept quiet appear here.</li></ul>
+        <div class="stats">
+          <div class="stat"><b id="sInfer">–</b><span>inference, ms</span></div>
+          <div class="stat"><b id="sObjects">–</b><span>objects found</span></div>
+          <div class="stat"><b id="sSpoken">–</b><span>warnings spoken</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="block about" aria-label="How it works">
+    <div>
+      <h3>Same model as the app</h3>
+      <p>YOLO26n fine-tuned by the team on 6,375 pedestrian-view SANPO frames, 9 classes. Exported to ONNX (9.8 MB) and run here with ONNX Runtime Web on the CPU. Nothing is uploaded.</p>
+    </div>
+    <div>
+      <h3>Same warning rules</h3>
+      <ul class="rules">
+        <li>confidence ≥ 0.50 and seen in 2 rounds</li>
+        <li>vehicle, cyclist: HIGH · person, animal: MEDIUM</li>
+        <li>pole, obstacle: LOW, or MEDIUM when ahead</li>
+        <li>one warning at a time, 2.5 s gap, 10 s repeat cooldown</li>
+        <li>stairs, traffic light, crosswalk: never spoken</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Limits</h3>
+      <p>A research prototype, not a mobility aid. On the SANPO test set the detector finds about 6 in 10 objects closer than 2 m. Keep using a cane or guide dog. Night, rain and indoor scenes are untested.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div>QolAIJol · ICT Project, Astana IT University, group IT-2609 · Dair Syrlybayev, Alibek Bolat, Abylai Zhakyp, Arman Nagim</div>
+    <div>Android app source: <a href="https://github.com/SoeJongGhan/QolAIJol" target="_blank" rel="noopener">github.com/SoeJongGhan/QolAIJol</a> · Research: <a href="https://doi.org/10.5281/zenodo.23429509" target="_blank" rel="noopener">doi.org/10.5281/zenodo.23429509</a></div>
+    <div>Street scenes: SANPO dataset (Google Research), CC BY 4.0.</div>
+  </footer>
+</div>
+
+<script type="module">
+import * as ort from "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.bundle.min.mjs";
+
+// ---------- model contract (YoloDetector.kt) ----------
+const INPUT = 640, PAD = 114 / 255, DET_MIN_CONF = 0.25, DUPLICATE_IOU = 0.7;
+const LABELS = ["pedestrian", "rider", "vehicle", "animal", "obstacle", "pole", "stairs", "crosswalk", "traffic light"];
+
+// ---------- DangerAnalyzer.kt ----------
+const P = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+const CLASS_PRIORITY = { vehicle: 2, rider: 2, pedestrian: 1, animal: 1, obstacle: 0, pole: 0 };
+const NEVER_SPOKEN = new Set(["stairs", "traffic light", "crosswalk"]);
+const position = (cx) => (cx < 0.33 ? "LEFT" : cx > 0.66 ? "RIGHT" : "CENTER");
+const basePriority = (name) => (name in CLASS_PRIORITY ? CLASS_PRIORITY[name] : null);
+function priorityOf(d) {
+  const base = basePriority(d.className);
+  if (base === null) return null;
+  return position(d.cx) === "CENTER" ? Math.min(base + 1, 3) : base;
+}
+
+// ---------- EnglishPhrases.kt ----------
+const RENAMED = { pedestrian: "person", rider: "cyclist" };
+const IRREGULAR = { person: "people", stairs: "stairs" };
+const objectName = (c) => RENAMED[c] || c;
+const positionWord = (p) => (p === "LEFT" ? "on the left" : p === "RIGHT" ? "on the right" : "ahead");
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const alertText = (c, p) => `${cap(objectName(c))} ${positionWord(p)}.`;
+function plural(n) {
+  if (IRREGULAR[n]) return IRREGULAR[n];
+  if (/(s|x|z|ch|sh)$/.test(n)) return n + "es";
+  if (n.length > 1 && n.endsWith("y") && !"aeiou".includes(n[n.length - 2])) return n.slice(0, -1) + "ies";
+  return n + "s";
+}
+const countPhrase = (c, k) => (k === 1 ? objectName(c) : `${k} ${plural(objectName(c))}`);
+
+// ---------- ObjectTracker.kt ----------
+function iou(a, b) {
+  const ix = Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l));
+  const iy = Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
+  const inter = ix * iy, union = (a.r - a.l) * (a.b - a.t) + (b.r - b.l) * (b.b - b.t) - inter;
+  return union > 0 ? inter / union : 0;
+}
+class ObjectTracker {
+  constructor(minMatchIou = 0.2, timeoutMs = 1500) { this.minMatchIou = minMatchIou; this.timeoutMs = timeoutMs; this.reset(); }
+  reset() { this.tracks = []; this.nextId = 1; }
+  update(dets, now) {
+    this.tracks = this.tracks.filter((t) => now - t.lastSeen <= this.timeoutMs);
+    const pairs = [];
+    this.tracks.forEach((t, ti) => dets.forEach((d, di) => {
+      if (d.classId === t.det.classId) { const v = iou(d, t.det); if (v >= this.minMatchIou) pairs.push([v, ti, di]); }
+    }));
+    pairs.sort((a, b) => b[0] - a[0]);
+    const mt = new Set(), md = new Set();
+    for (const [, ti, di] of pairs) {
+      if (mt.has(ti) || md.has(di)) continue;
+      mt.add(ti); md.add(di);
+      const t = this.tracks[ti];
+      this.tracks[ti] = { ...t, det: dets[di], lastSeen: now, hits: t.hits + 1 };
+    }
+    dets.forEach((d, i) => { if (!md.has(i)) this.tracks.push({ id: this.nextId++, det: d, firstSeen: now, lastSeen: now, hits: 1 }); });
+    return this.tracks.filter((t) => t.lastSeen === now);
+  }
+}
+
+// ---------- DecisionEngine.kt (+ a reason for every object, for this page) ----------
+class DecisionEngine {
+  constructor() { this.minConfidence = 0.5; this.minHits = 2; this.minPriority = 1; this.minAlertGapMs = 2500; this.eventCooldownMs = 10000; this.reset(); }
+  reset() { this.announced = new Map(); this.recent = new Map(); this.lastAlert = null; }
+  process(tracks, now) {
+    const visible = new Set(tracks.map((t) => t.id));
+    for (const id of [...this.announced.keys()]) if (!visible.has(id)) this.announced.delete(id);
+    const reasons = new Map(), candidates = [];
+    for (const t of tracks) {
+      const d = t.det, pos = position(d.cx), key = `${d.className}|${pos}`;
+      if (NEVER_SPOKEN.has(d.className)) { reasons.set(t.id, "Never spoken: too unreliable in testing, or risky if wrong."); continue; }
+      if (d.conf < this.minConfidence) { reasons.set(t.id, "Kept quiet: confidence below 0.50."); continue; }
+      if (t.hits < this.minHits) { reasons.set(t.id, "Waiting for a second sighting (filters one-frame errors)."); continue; }
+      const pr = priorityOf(d);
+      if (pr === null) { reasons.set(t.id, "Not a warning class."); continue; }
+      if (pr < this.minPriority) { reasons.set(t.id, "Low priority while it is off to the side."); continue; }
+      if (this.announced.get(t.id) === pos) { reasons.set(t.id, "Already announced at this position."); continue; }
+      const last = this.recent.get(key);
+      if (last !== undefined && now - last < this.eventCooldownMs) { this.announced.set(t.id, pos); reasons.set(t.id, "Same kind of object here was announced in the last 10 s."); continue; }
+      candidates.push({ t, pr });
+    }
+    candidates.sort((a, b) => (b.pr - a.pr) || ((position(b.t.det.cx) === "CENTER") - (position(a.t.det.cx) === "CENTER")) || (b.t.det.conf - a.t.det.conf));
+    const best = candidates[0];
+    let alert = null;
+    if (best) {
+      if (this.lastAlert !== null && now - this.lastAlert < this.minAlertGapMs && best.pr < 3) {
+        for (const c of candidates) reasons.set(c.t.id, "Queued: the previous warning is still being spoken.");
+      } else {
+        const d = best.t.det, pos = position(d.cx);
+        this.announced.set(best.t.id, pos);
+        this.recent.set(`${d.className}|${pos}`, now);
+        this.lastAlert = now;
+        alert = { message: alertText(d.className, pos), priority: P[best.pr], trackId: best.t.id };
+        reasons.set(best.t.id, "Spoken: the most important object right now.");
+        for (const c of candidates.slice(1)) reasons.set(c.t.id, "Next in line: one warning at a time, 2.5 s apart.");
+      }
+    }
+    return { alert, reasons, candidates: new Set(candidates.map((c) => c.t.id)) };
+  }
+}
+
+// ---------- SceneAnalyzer.kt ----------
+function sceneAnswer(dets) {
+  const reliable = dets.filter((d) => d.conf >= 0.5 && !NEVER_SPOKEN.has(d.className));
+  if (!reliable.length) return "Nothing detected.";
+  const parts = [];
+  for (const pos of ["CENTER", "LEFT", "RIGHT"]) {
+    const inZone = reliable.filter((d) => position(d.cx) === pos);
+    if (!inZone.length) continue;
+    const groups = {};
+    for (const d of inZone) (groups[d.className] ||= []).push(d);
+    const text = Object.entries(groups)
+      .sort((a, b) => ((basePriority(b[0]) ?? -1) - (basePriority(a[0]) ?? -1)) || (b[1].length - a[1].length))
+      .slice(0, 4).map(([c, g]) => countPhrase(c, g.length)).join(", ");
+    parts.push(`${cap(positionWord(pos))}: ${text}.`);
+  }
+  return parts.join(" ");
+}
+
+// ---------- page state ----------
+const $ = (id) => document.getElementById(id);
+const canvas = $("canvas"), ctx = canvas.getContext("2d"), video = $("video");
+const prep = document.createElement("canvas"); prep.width = prep.height = INPUT;
+const pctx = prep.getContext("2d", { willReadFrequently: true });
+const tracker = new ObjectTracker(), engine = new DecisionEngine();
+const SAMPLES = [
+  ["sidewalk-pole", "Sidewalk, scaffolding"], ["busy-sidewalk", "Busy sidewalk"], ["traveller", "Person with suitcase"],
+  ["park-path", "Park path"], ["street-corner", "Street corner"], ["crosswalk", "Crosswalk"],
+];
+let session = null, source = null, lastTracks = [], lastReasons = new Map(), lastAlert = null, spokenCount = 0, busy = false;
+let live = { stream: null, raf: 0, lastDetect: 0 };
+let userGestured = false;
+document.addEventListener("pointerdown", () => { userGestured = true; }, { once: true, capture: true });
+
+function setStatus(text, state) { $("statusText").textContent = text; $("dot").className = "dot " + (state || ""); }
+
+// ---------- detector ----------
+async function fetchWithProgress(url, from, to) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  const total = +res.headers.get("content-length") || 0;
+  if (!res.body || !total) return new Uint8Array(await res.arrayBuffer());
+  const reader = res.body.getReader(), chunks = []; let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value); got += value.length;
+    $("bar").style.width = (from + (to - from) * got / total).toFixed(1) + "%";
+  }
+  const out = new Uint8Array(got); let o = 0;
+  for (const c of chunks) { out.set(c, o); o += c.length; }
+  return out;
+}
+
+async function loadDetector() {
+  try {
+    setStatus("Loading the detector (21 MB, once)…", "busy");
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.wasmBinary = (await fetchWithProgress("ort-wasm-simd-threaded.wasm", 0, 50)).buffer;
+    let model;
+    try {
+      model = await fetchWithProgress("model.onnx", 50, 100);
+    } catch {
+      // Hosts that do not serve .onnx get the same bytes as base64 text.
+      const text = new TextDecoder().decode(await fetchWithProgress("model.b64.txt", 50, 100));
+      const bin = atob(text.trim());
+      model = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) model[i] = bin.charCodeAt(i);
+    }
+    session = await ort.InferenceSession.create(model, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
+    $("progress").hidden = true;
+    setStatus("Detector ready · YOLO26n on your CPU", "ready");
+    $("around").disabled = false;
+    if (source) await analyseStill();
+  } catch (e) {
+    console.error(e);
+    setStatus("The detector could not load. Reload the page to try again.", "");
+    showAlert(null, "The detector could not load", String(e.message || e));
+  }
+}
+
+function letterbox(src, w, h) {
+  const scale = Math.min(INPUT / w, INPUT / h), cw = Math.round(w * scale), ch = Math.round(h * scale);
+  const px = Math.floor((INPUT - cw) / 2), py = Math.floor((INPUT - ch) / 2);
+  pctx.fillStyle = "rgb(114,114,114)"; pctx.fillRect(0, 0, INPUT, INPUT);
+  pctx.drawImage(src, px, py, cw, ch);
+  const rgba = pctx.getImageData(0, 0, INPUT, INPUT).data, plane = INPUT * INPUT, data = new Float32Array(3 * plane);
+  for (let i = 0, j = 0; i < plane; i++, j += 4) {
+    data[i] = rgba[j] / 255; data[plane + i] = rgba[j + 1] / 255; data[2 * plane + i] = rgba[j + 2] / 255;
+  }
+  return { data, scale, px, py };
+}
+
+async function detect(src, w, h) {
+  const t0 = performance.now();
+  const { data, scale, px, py } = letterbox(src, w, h);
+  const out = await session.run({ images: new ort.Tensor("float32", data, [1, 3, INPUT, INPUT]) });
+  const o = out[session.outputNames[0]].data, rows = o.length / 6, cands = [];
+  for (let r = 0; r < rows; r++) {
+    const b = r * 6, score = o[b + 4];
+    if (score < DET_MIN_CONF) continue;
+    const clamp = (v) => Math.min(1, Math.max(0, v));
+    const l = clamp((o[b] - px) / scale / w), t = clamp((o[b + 1] - py) / scale / h);
+    const rr = clamp((o[b + 2] - px) / scale / w), bb = clamp((o[b + 3] - py) / scale / h);
+    if (rr <= l || bb <= t) continue;
+    const classId = Math.round(o[b + 5]);
+    cands.push({ classId, className: LABELS[classId] || `class ${classId}`, conf: score, l, t, r: rr, b: bb, cx: (l + rr) / 2 });
+  }
+  cands.sort((a, b) => b.conf - a.conf);
+  const kept = [];
+  for (const c of cands) if (!kept.some((k) => k.classId === c.classId && iou(k, c) > DUPLICATE_IOU)) kept.push(c);
+  return { dets: kept, ms: performance.now() - t0 };
+}
+
+// ---------- drawing ----------
+function fitCanvas(w, h) {
+  const stage = $("stage"); stage.style.aspectRatio = `${w} / ${h}`;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), cssW = stage.clientWidth || 960;
+  canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssW * dpr * h / w);
+}
+function draw(src) {
+  const W = canvas.width, H = canvas.height;
+  ctx.drawImage(src, 0, 0, W, H);
+  ctx.save();
+  ctx.setLineDash([6, 8]); ctx.strokeStyle = "rgba(245,197,24,0.55)"; ctx.lineWidth = Math.max(1, W / 600);
+  for (const x of [0.33, 0.66]) { ctx.beginPath(); ctx.moveTo(x * W, 0); ctx.lineTo(x * W, H); ctx.stroke(); }
+  ctx.restore();
+  const font = Math.max(12, Math.round(W / 55));
+  ctx.font = `600 ${font}px "Atkinson Hyperlegible Mono", ui-monospace, monospace`;
+  const order = [...lastTracks].sort((a, b) => (a.id === lastAlert?.trackId) - (b.id === lastAlert?.trackId));
+  for (const t of order) {
+    const d = t.det, spoken = lastAlert && t.id === lastAlert.trackId;
+    const quiet = (lastReasons.get(t.id) || "").startsWith("Kept quiet") || NEVER_SPOKEN.has(d.className);
+    const x = d.l * W, y = d.t * H, w = (d.r - d.l) * W, h = (d.b - d.t) * H;
+    ctx.lineWidth = spoken ? Math.max(3, W / 220) : Math.max(1.5, W / 640);
+    ctx.setLineDash(quiet ? [5, 5] : []);
+    ctx.strokeStyle = spoken ? "#f5c518" : quiet ? "rgba(162,167,173,0.8)" : "#eeece6";
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+    if (d.conf >= 0.5 || spoken) {
+      const label = `${objectName(d.className)} ${d.conf.toFixed(2)}`, tw = ctx.measureText(label).width + 10;
+      const ly = y > font + 6 ? y - font - 6 : y;
+      ctx.fillStyle = spoken ? "#f5c518" : "rgba(22,24,27,0.85)";
+      ctx.fillRect(x, ly, tw, font + 6);
+      ctx.fillStyle = spoken ? "#1b1600" : "#eeece6";
+      ctx.fillText(label, x + 5, ly + font);
+    }
+  }
+}
+
+// ---------- results UI ----------
+function showAlert(alert, say, why) {
+  const box = $("alert");
+  box.className = "alert" + (alert ? "" : " quiet");
+  $("say").textContent = say; $("why").textContent = why;
+}
+function speak(text, urgent) {
+  if (!$("voice").checked || !("speechSynthesis" in window) || !userGestured) return;
+  if (urgent) speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = 1.05;
+  speechSynthesis.speak(u);
+}
+function renderDecisions(tracks, reasons, inferMs) {
+  const list = $("decisions"); list.textContent = "";
+  const sorted = [...tracks].sort((a, b) => {
+    const s = (t) => (lastAlert && t.id === lastAlert.trackId ? 2 : 0) + (reasons.get(t.id)?.startsWith("Next") ? 1 : 0);
+    return s(b) - s(a) || b.det.conf - a.det.conf;
+  });
+  if (!sorted.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No objects found in this frame."; list.append(li); }
+  for (const t of sorted.slice(0, 12)) {
+    const d = t.det, li = document.createElement("li"), pr = priorityOf(d);
+    if (lastAlert && t.id === lastAlert.trackId) li.className = "spoken";
+    const obj = document.createElement("span"); obj.className = "obj";
+    obj.textContent = `${cap(objectName(d.className))} ${positionWord(position(d.cx))}`;
+    if (pr !== null && !NEVER_SPOKEN.has(d.className)) { const c = document.createElement("span"); c.className = "chip " + P[pr]; c.textContent = P[pr]; obj.append(c); }
+    const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = d.conf.toFixed(2);
+    const why = document.createElement("span"); why.className = "reason"; why.textContent = reasons.get(t.id) || "";
+    li.append(obj, meta, why); list.append(li);
+  }
+  if (sorted.length > 12) { const li = document.createElement("li"); li.className = "empty"; li.textContent = `+ ${sorted.length - 12} more low-confidence boxes`; list.append(li); }
+  $("sInfer").textContent = Math.round(inferMs);
+  $("sObjects").textContent = tracks.filter((t) => t.det.conf >= 0.5).length;
+  $("sSpoken").textContent = spokenCount;
+}
+
+// ---------- still images (samples and photos) ----------
+async function analyseStill() {
+  if (!source) return;
+  fitCanvas(source.w, source.h);
+  lastTracks = []; lastAlert = null; draw(source.el);
+  if (!session || busy) return;
+  busy = true; setStatus("Detecting…", "busy");
+  try {
+    const { dets, ms } = await detect(source.el, source.w, source.h);
+    // A still photo stands for two detection rounds 500 ms apart, so the 2-sighting rule can pass.
+    tracker.reset(); engine.reset();
+    const t0 = performance.now();
+    tracker.update(dets, t0);
+    const tracks = tracker.update(dets, t0 + 500);
+    const res = engine.process(tracks, t0 + 500);
+    lastTracks = tracks; lastReasons = res.reasons; lastAlert = res.alert;
+    if (res.alert) {
+      spokenCount++;
+      showAlert(res.alert, res.alert.message, `${res.alert.priority} priority · ${res.candidates.size - 1} more in line`);
+      speak(res.alert.message, true);
+    } else {
+      showAlert(null, "No warning", sceneAnswer(dets));
+    }
+    draw(source.el); renderDecisions(tracks, res.reasons, ms);
+    $("repeat").disabled = !res.alert;
+    setStatus("Detector ready · YOLO26n on your CPU", "ready");
+  } catch (e) {
+    console.error(e); setStatus("Detection failed on this image. Try another one.", "");
+  } finally { busy = false; }
+}
+
+function loadImage(url) {
+  return new Promise((resolve, reject) => { const im = new Image(); im.onload = () => resolve(im); im.onerror = reject; im.src = url; });
+}
+async function useSample(i) {
+  stopLive();
+  [...$("thumbs").children].forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
+  const im = await loadImage(`samples/${SAMPLES[i][0]}.jpg`);
+  source = { el: im, w: im.naturalWidth, h: im.naturalHeight };
+  await analyseStill();
+}
+
+SAMPLES.forEach(([file, label], i) => {
+  const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", label);
+  const im = document.createElement("img"); im.src = `samples/${file}.jpg`; im.alt = ""; im.loading = "lazy";
+  b.append(im); b.addEventListener("click", () => useSample(i)); $("thumbs").append(b);
+});
+
+$("file").addEventListener("change", async (e) => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  stopLive();
+  try {
+    const bmp = await createImageBitmap(f, { imageOrientation: "from-image" });
+    // Cap the size: the detector only needs 640 px and big photos slow down drawing.
+    const s = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    source = { el: c, w: c.width, h: c.height };
+    [...$("thumbs").children].forEach((b) => b.setAttribute("aria-pressed", "false"));
+    await analyseStill();
+  } catch (err) { console.error(err); setStatus("That file could not be opened as a photo.", ""); }
+  e.target.value = "";
+});
+
+// ---------- live camera ----------
+async function startLive() {
+  if (!session) { setStatus("Wait for the detector to finish loading.", "busy"); return; }
+  $("liveBlocked").hidden = true;
+  try {
+    live.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  } catch (e) {
+    console.warn(e); $("liveBlocked").hidden = false; return;
+  }
+  video.srcObject = live.stream; await video.play();
+  fitCanvas(video.videoWidth, video.videoHeight);
+  tracker.reset(); engine.reset(); lastTracks = []; lastAlert = null;
+  $("liveStart").disabled = true; $("liveStop").disabled = false;
+  showAlert(null, "Listening for obstacles", "Walk slowly and keep the camera pointed ahead.");
+  const loop = async (now) => {
+    if (!live.stream) return;
+    draw(video);
+    if (!busy && now - live.lastDetect >= 500) {
+      busy = true; live.lastDetect = now;
+      try {
+        const { dets, ms } = await detect(video, video.videoWidth, video.videoHeight);
+        const t = performance.now(), tracks = tracker.update(dets, t), res = engine.process(tracks, t);
+        lastTracks = tracks; lastReasons = res.reasons;
+        if (res.alert) {
+          lastAlert = res.alert; spokenCount++;
+          showAlert(res.alert, res.alert.message, `${res.alert.priority} priority`);
+          speak(res.alert.message, res.alert.priority === "CRITICAL");
+          $("repeat").disabled = false;
+        } else if (lastAlert && !tracks.some((t) => t.id === lastAlert.trackId)) {
+          lastAlert = null;
+        }
+        renderDecisions(tracks, res.reasons, ms);
+      } finally { busy = false; }
+    }
+    live.raf = requestAnimationFrame(loop);
+  };
+  live.raf = requestAnimationFrame(loop);
+}
+function stopLive() {
+  if (!live.stream) return;
+  cancelAnimationFrame(live.raf);
+  live.stream.getTracks().forEach((t) => t.stop()); live.stream = null; video.srcObject = null;
+  $("liveStart").disabled = false; $("liveStop").disabled = true;
+}
+$("liveStart").addEventListener("click", startLive);
+$("liveStop").addEventListener("click", () => { stopLive(); if (source) analyseStill(); });
+
+// ---------- tabs and buttons ----------
+const TABS = ["samples", "photo", "live"];
+TABS.forEach((name) => $("tab-" + name).addEventListener("click", () => {
+  TABS.forEach((n) => { $("tab-" + n).setAttribute("aria-selected", String(n === name)); $("pane-" + n).hidden = n !== name; });
+  if (name !== "live") stopLive();
+}));
+$("around").addEventListener("click", () => {
+  const dets = lastTracks.map((t) => t.det), text = sceneAnswer(dets);
+  showAlert(null, text, "Answer to “What’s around me?” from the latest detections.");
+  speak(text, true);
+});
+$("repeat").addEventListener("click", () => { if (lastAlert) speak(lastAlert.message, true); });
+window.addEventListener("resize", () => { if (source && !live.stream) { fitCanvas(source.w, source.h); draw(source.el); } });
+
+// First frame is visible before the model finishes loading.
+useSample(0).catch(console.error);
+loadDetector();
+</script>
+
+</body></html>
